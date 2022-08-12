@@ -1,4 +1,4 @@
-name: Build and Test OCaml
+name: Opam Regular - Build and Test
 
 env:
   OPAM_PACKAGE: "your_example"
@@ -111,7 +111,7 @@ jobs:
           key: ${{ matrix.dkml-host-abi }}
       # BOILERPLATE END: setup-dkml
 
-      # BOILERPLATE START: setup-dkml
+      # BOILERPLATE START: setup-dkml for Opam Regular workflow
       - name: Build and test the package
         # Because conf-pkg-config errors on manylinux2014 (CentOS 7):
         #   No solution found, exiting
@@ -123,16 +123,23 @@ jobs:
         run: |
           #!/bin/sh
           set -euf
+
+          # Build and test
           case "${{ matrix.dkml-host-abi }}" in
             linux_*) opamrun install ./${OPAM_PACKAGE}.opam --with-test --yes --no-depexts ;;
             *) opamrun install ./${OPAM_PACKAGE}.opam --with-test --yes ;;
           esac
 
+          # Copy the installed binary from 'dkml' Opam switch into dist/ folder
+          extension=$(opamrun var exe)
+          install -d dist/
+          install -v "${{ matrix.opam-root }}/dkml/bin/your_example${extension}" "dist/${{ matrix.dkml-host-abi }}-your_example${extension}"
+
       - uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.dkml-host-abi }}
           path: dist/
-      # BOILERPLATE END: setup-dkml
+      # BOILERPLATE END: setup-dkml for Opam Regular workflow
 
   #--------
   # Release

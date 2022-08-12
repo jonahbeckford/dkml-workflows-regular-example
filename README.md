@@ -1,11 +1,22 @@
-# dkml-workflows-example
+# dkml-workflows-regular-example
 
-Examples for GitHub Action workflows used by and with Diskuv OCaml (DKML) tooling. DKML helps you
+A "regular" example for the [dkml-workflow](https://github.com/diskuv/dkml-workflows#dkml-workflows) GitHub Action
+workflows. DKML helps you
 distribute native OCaml applications on the most common operating systems.
+In particular [dkml-workflow] builds:
+* Windows libraries and executables with the traditional Visual Studio compiler, avoiding hard-to-debug runtime issued caused by compiler incompatibilities
+* macOS libraries and executables for both Intel and ARM64 (Apple Silicon) architectures
+* Linux libraries and executables on an ancient "glibc" C library, letting you distribute your software to most Linux users
+  while avoiding the alternative approach of [static linking the system C library](https://gavinhoward.com/2021/10/static-linking-considered-harmful-considered-harmful/)
 
-These examples are useful for more than DKML though! If you want to test your
-code with the Microsoft Visual Studio compiler and MSYS2, or if you want to produce Linux binaries
-that don't need to be statically linked, this is the right place.
+[dkml-workflow]: https://github.com/diskuv/dkml-workflows#dkml-workflows
+
+The full list of examples is:
+
+| Example                                                                                      | Who For                                                                                                    |
+| -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| [dkml-workflows-monorepo-example](https://github.com/diskuv/dkml-workflows-monorepo-example) | You want to cross-compile ARM64 on Mac Intel.<br>You are building [Mirage unikernels](https://mirage.io/). |
+| [dkml-workflows-regular-example](https://github.com/diskuv/dkml-workflows-regular-example)   | Everybody else                                                                                             |
 
 These workflows are **not quick** and won't improve unless you are willing to contribute PRs!
 Expect to wait approximately:
@@ -25,13 +36,13 @@ Expect to wait approximately:
 | release                                                  | `01m`      | sdf              |
 | **TOTAL** *(not cumulative since steps run in parallel)* | `57m`      | sdf              |
 
-You can see an example workflow at https://github.com/diskuv/dkml-workflows-example/actions/workflows/package.yml
+You can see an example workflow at https://github.com/diskuv/dkml-workflows-regular-example/actions/workflows/package.yml
 
 [1] `setup-dkml/macos-darwin_all` is doing double-duty: it is compiling x86_64 and arm64 systems.
 
 ## Status
 
-| What             | Branch/Tag | Status                                                                                                                                                                                        |
-| ---------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Builds and tests |            | [![Builds and tests](https://github.com/diskuv/dkml-workflows-example/actions/workflows/package.yml/badge.svg)](https://github.com/diskuv/dkml-workflows-example/actions/workflows/build.yml) |
-| Static checks    |            | [![Static checks](https://github.com/diskuv/dkml-workflows-example/actions/workflows/syntax.yml/badge.svg)](https://github.com/diskuv/dkml-workflows-example/actions/workflows/static.yml)    |
+| What             | Branch/Tag | Status                                                                                                                                                                                                      |
+| ---------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Builds and tests |            | [![Builds and tests](https://github.com/diskuv/dkml-workflows-regular-example/actions/workflows/build.yml/badge.svg)](https://github.com/diskuv/dkml-workflows-regular-example/actions/workflows/build.yml) |
+| Static checks    |            | [![Static checks](https://github.com/diskuv/dkml-workflows-regular-example/actions/workflows/static.yml/badge.svg)](https://github.com/diskuv/dkml-workflows-regular-example/actions/workflows/static.yml)  |
