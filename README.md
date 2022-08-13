@@ -1,22 +1,23 @@
 # dkml-workflows-regular-example
 
-A "regular" example for the [dkml-workflow](https://github.com/diskuv/dkml-workflows#dkml-workflows) GitHub Action
-workflows. DKML helps you
+A "regular" example for the [dkml-workflows](https://github.com/diskuv/dkml-workflows#dkml-workflows)
+collection of GitHub Action workflows. DKML helps you
 distribute native OCaml applications on the most common operating systems.
-In particular [dkml-workflow] builds:
+In particular the [setup-dkml.yml@v0] of [dkml-workflows] builds:
 * Windows libraries and executables with the traditional Visual Studio compiler, avoiding hard-to-debug runtime issued caused by compiler incompatibilities
 * macOS libraries and executables for both Intel and ARM64 (Apple Silicon) architectures
 * Linux libraries and executables on an ancient "glibc" C library, letting you distribute your software to most Linux users
   while avoiding the alternative approach of [static linking the system C library](https://gavinhoward.com/2021/10/static-linking-considered-harmful-considered-harmful/)
 
-[dkml-workflow]: https://github.com/diskuv/dkml-workflows#dkml-workflows
-
 The full list of examples is:
 
-| Example                                                                                      | Who For                                                                                                    |
-| -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| [dkml-workflows-monorepo-example](https://github.com/diskuv/dkml-workflows-monorepo-example) | You want to cross-compile ARM64 on Mac Intel.<br>You are building [Mirage unikernels](https://mirage.io/). |
-| [dkml-workflows-regular-example](https://github.com/diskuv/dkml-workflows-regular-example)   | Everybody else                                                                                             |
+| Example                                                                                      | Who For                                                                                                                                         |
+| -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| [dkml-workflows-monorepo-example](https://github.com/diskuv/dkml-workflows-monorepo-example) | **Not ready for public use yet!**<br>You want to cross-compile ARM64 on Mac Intel.<br>You are building [Mirage unikernels](https://mirage.io/). |
+| [dkml-workflows-regular-example](https://github.com/diskuv/dkml-workflows-regular-example)   | Everybody else                                                                                                                                  |
+
+> Before using these examples be sure to read the [advantages and disadvantages of setup-workflow][setup-dkml.yml@v0].
+> One particular limitation is that, as of today, [setup-dkml.yml@v0] only supports OCaml 4.12.1.
 
 These workflows are **not quick** and won't improve unless you are willing to contribute PRs!
 Expect to wait approximately:
@@ -46,3 +47,6 @@ You can see an example workflow at https://github.com/diskuv/dkml-workflows-regu
 | ---------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Builds and tests |            | [![Builds and tests](https://github.com/diskuv/dkml-workflows-regular-example/actions/workflows/build.yml/badge.svg)](https://github.com/diskuv/dkml-workflows-regular-example/actions/workflows/build.yml) |
 | Static checks    |            | [![Static checks](https://github.com/diskuv/dkml-workflows-regular-example/actions/workflows/static.yml/badge.svg)](https://github.com/diskuv/dkml-workflows-regular-example/actions/workflows/static.yml)  |
+
+[dkml-workflows]: https://github.com/diskuv/dkml-workflows#dkml-workflows
+[setup-dkml.yml@v0]: https://github.com/diskuv/dkml-workflows/tree/v0#setup-dkml-auto-generating-github-releases-for-ocaml-native-executables
