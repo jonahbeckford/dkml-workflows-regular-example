@@ -133,6 +133,7 @@ jobs:
           # Copy the installed binary from 'dkml' Opam switch into dist/ folder
           extension=$(opamrun var exe)
           install -d dist/
+          ls -l '${{ matrix.opam-root }}/dkml/bin'
           install -v "${{ matrix.opam-root }}/dkml/bin/your_example${extension}" "dist/${{ matrix.dkml-host-abi }}-your_example${extension}"
 
       - uses: actions/upload-artifact@v3
