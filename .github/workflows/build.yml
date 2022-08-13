@@ -8,12 +8,14 @@ on:
     branches:
       - main
       - v*
+      - jonahbeckford-v0
     tags:
       - v*
 
 jobs:
   setup-dkml:
-    uses: "diskuv/dkml-workflows/.github/workflows/setup-dkml.yml@v0"
+    # DO NOT USE [-prerelease] IN PUBLIC BRANCH
+    uses: "diskuv/dkml-workflows-prerelease/.github/workflows/setup-dkml.yml@v0"
     with:
       ocaml-compiler: 4.12.1
 
