@@ -1,0 +1,52 @@
+include:
+  - remote: 'https://gitlab.com/diskuv-ocaml/build-tools/dkml-workflows/-/raw/feature-gitlab/.gitlab/setup-dkml.gitlab-ci.yml'
+
+variables:
+  THE_OPAM_PACKAGE: your_example.opam
+  THE_EXECUTABLE_NAME: your_example
+
+build_linux:
+  script:
+    - ci/build-test.sh --opam-package "$THE_OPAM_PACKAGE" --executable-name "$THE_EXECUTABLE_NAME"
+
+build_macos:
+  script:
+    - ci/build-test.sh --opam-package "$THE_OPAM_PACKAGE" --executable-name "$THE_EXECUTABLE_NAME"
+
+build_win32:
+  script:
+    - dir
+    - msys64\usr\bin\bash -lc "ci/build-test.sh --opam-package ${env:THE_OPAM_PACKAGE} --executable-name ${env:THE_EXECUTABLE_NAME}"
+
+release:
+  stage: deploy
+  image: alpine
+  # needs:
+  #   - build_linux
+  #   #- build_macos # currently disabled
+  #   - build_win32
+  script:
+    - apk install jq rsync curl
+
+    # Make _release
+    - ci/prepare-release.sh
+    
+    # Create public packages
+    - |
+      if [ -z "$CI_COMMIT_TAG" ]; then
+        PKGTAG="$CI_COMMIT_BRANCH"
+      elif [ -n "$CI_COMMIT_TAG" ]; then
+        PKGTAG=$(echo "$CI_COMMIT_TAG" | sed 's/^v//')
+      else
+        PKGTAG="$CI_COMMIT_SHORT_SHA"
+      fi
+
+    - CI_PROJECT_PATH_URLENCODED=$(printf %s "$CI_PROJECT_PATH" | jq -s -R -r @uri) # Must be url-encoded per https://docs.gitlab.com/ee/user/packages/generic_packages/
+    - PACKAGE_REGISTRY_URL="${CI_API_V4_URL}/projects/$CI_PROJECT_PATH_URLENCODED/packages/generic/$THE_EXECUTABLE_NAME/$PKGTAG"
+    - echo $PACKAGE_REGISTRY_URL
+    - |
+      GLAB_CURL_HEADER="JOB-TOKEN: ${CI_JOB_TOKEN}"
+      find _release -mindepth 1 -maxdepth 1 -type f | while read -r releasefile; do
+        curl --fail --header "$GLAB_CURL_HEADER" --upload-file "_release/$releasefile" "$PACKAGE_REGISTRY_URL/$releasefile"
+      done
+

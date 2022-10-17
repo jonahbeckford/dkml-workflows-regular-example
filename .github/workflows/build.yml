@@ -8,14 +8,19 @@ on:
     branches:
       - main
       - v*
+      - feature-*
     tags:
       - v*
+  # ... or trigger manually from GitHub web interface
+  workflow_dispatch:
 
 jobs:
   setup-dkml:
-    uses: "diskuv/dkml-workflows/.github/workflows/setup-dkml.yml@v0"
+    # uses: "diskuv/dkml-workflows/.github/workflows/setup-dkml.yml@v1"
+    uses: "diskuv/dkml-workflows-prerelease/.github/workflows/setup-dkml.yml@feature-gitlab"
     with:
-      ocaml-compiler: 4.12.1
+      OCAML_COMPILER: 4.12.1
+      CACHE_PREFIX: test1
 
   build:
     timeout-minutes: 90 # 1.5 hours
@@ -29,38 +34,38 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: windows-2019
-            abi-pattern: win32-windows_x86
-            dkml-host-abi: windows_x86
-            opam-root: D:/.opam
+          - gh_os: windows-2019
+            abi_pattern: win32-windows_x86
+            dkml_host_abi: windows_x86
+            opam_root: D:/.opam
             default_shell: msys2 {0}
             msys2_system: MINGW32
             msys2_packages: mingw-w64-i686-pkg-config
-          - os: windows-2019
-            abi-pattern: win32-windows_x86_64
-            dkml-host-abi: windows_x86_64
-            opam-root: D:/.opam
+          - gh_os: windows-2019
+            abi_pattern: win32-windows_x86_64
+            dkml_host_abi: windows_x86_64
+            opam_root: D:/.opam
             default_shell: msys2 {0}
             msys2_system: CLANG64
             msys2_packages: mingw-w64-clang-x86_64-pkg-config
-          - os: macos-latest
-            abi-pattern: macos-darwin_all
-            dkml-host-abi: darwin_x86_64
-            opam-root: /Users/runner/.opam
+          - gh_os: macos-latest
+            abi_pattern: macos-darwin_all
+            dkml_host_abi: darwin_x86_64
+            opam_root: /Users/runner/.opam
             default_shell: sh
-          - os: ubuntu-latest
-            abi-pattern: manylinux2014-linux_x86
-            dkml-host-abi: linux_x86
-            opam-root: .ci/opamroot
+          - gh_os: ubuntu-latest
+            abi_pattern: manylinux2014-linux_x86
+            dkml_host_abi: linux_x86
+            opam_root: .ci/opamroot
             default_shell: sh
-          - os: ubuntu-latest
-            abi-pattern: manylinux2014-linux_x86_64
-            dkml-host-abi: linux_x86_64
-            opam-root: .ci/opamroot
+          - gh_os: ubuntu-latest
+            abi_pattern: manylinux2014-linux_x86_64
+            dkml_host_abi: linux_x86_64
+            opam_root: .ci/opamroot
             default_shell: sh
 
-    runs-on: ${{ matrix.os }}
-    name: build / ${{ matrix.abi-pattern }}
+    runs-on: ${{ matrix.gh_os }}
+    name: build / ${{ matrix.abi_pattern }}
 
     # Use a Unix shell by default, even on Windows
     defaults:
@@ -77,7 +82,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Install MSYS2 to provide Unix shell (Windows only)
-        if: startsWith(matrix.dkml-host-abi, 'windows')
+        if: startsWith(matrix.dkml_host_abi, 'windows')
         uses: msys2/setup-msys2@v2
         with:
           msystem: ${{ matrix.msys2_system }}
@@ -101,50 +106,27 @@ jobs:
       - name: Import build environments from setup-dkml
         run: |
           ${{ needs.setup-dkml.outputs.import_func }}
-          import ${{ matrix.abi-pattern }}
+          import ${{ matrix.abi_pattern }}
 
       - name: Cache Opam downloads by host
         uses: actions/cache@v3
         with:
-          path: ${{ matrix.opam-root }}/download-cache
-          key: ${{ matrix.dkml-host-abi }}
+          path: ${{ matrix.opam_root }}/download-cache
+          key: ${{ matrix.dkml_host_abi }}
       # BOILERPLATE END: setup-dkml
 
       # BOILERPLATE START: setup-dkml for Opam Regular workflow
       - name: Build and test the package
-        # Because conf-pkg-config errors on manylinux2014 (CentOS 7):
-        #   No solution found, exiting
-        #   - conf-pkg-config
-        #   depends on the unavailable system package 'pkgconfig'.
-        # we use `--no-depexts`. The dockcross manylinux2014 has package names
-        # "pkgconfig.i686" and "pkgconfig.x86_64"; sadly that does not seem to match what
-        # opam 2.1.0 is looking for (ie. "pkgconfig").
-        run: |
-          #!/bin/sh
-          set -euf
-
-          # Build and test
-          case "${{ matrix.dkml-host-abi }}" in
-            linux_*) opamrun install ./${OPAM_PACKAGE}.opam --with-test --yes --no-depexts ;;
-            *) opamrun install ./${OPAM_PACKAGE}.opam --with-test --yes ;;
-          esac
-
-          # Copy the installed binary from 'dkml' Opam switch into dist/ folder
-          extension=$(opamrun var exe)
-          install -d dist/
-          ls -l '${{ matrix.opam-root }}/dkml/bin'
-          install -v "${{ matrix.opam-root }}/dkml/bin/your_example${extension}" "dist/${{ matrix.dkml-host-abi }}-your_example${extension}"
-
-          # For Windows you must ask your users to first install the vc_redist executable.
-          # Confer: https://github.com/diskuv/dkml-workflows#distributing-your-windows-executables
-          case "${{ matrix.dkml-host-abi }}" in
-            windows_x86_64) wget -O dist/vc_redist.x64.exe https://aka.ms/vs/17/release/vc_redist.x64.exe ;;
-            windows_x86)    wget -O dist/vc_redist.x86.exe https://aka.ms/vs/17/release/vc_redist.x86.exe ;;
-          esac
+        env:
+          opam_root:                "${{ matrix.opam_root }}"
+          exe_ext:                  "${{ matrix.exe_ext }}"
+          dkml_host_abi:            "${{ matrix.dkml_host_abi }}"
+          abi_pattern:              "${{ matrix.abi_pattern }}"
+        run: ci/build-test.sh --opam-package your_example.opam --executable-name your_example
 
       - uses: actions/upload-artifact@v3
         with:
-          name: ${{ matrix.dkml-host-abi }}
+          name: ${{ matrix.dkml_host_abi }}
           path: dist/
       # BOILERPLATE END: setup-dkml for Opam Regular workflow
 
@@ -169,18 +151,7 @@ jobs:
         working-directory: dist
 
       - name: Restructure multi-ABI directories
-        run: |
-          _release="$(pwd)/_release"
-          install -d "$_release"
-
-          cd dist
-          find . -mindepth 1 -maxdepth 1 -type d | while read -r distname; do
-            rsync -av $distname/ "$_release"
-          done
-
-      - name: Display files to be distributed
-        run: ls -R
-        working-directory: _release
+        run: ci/prepare-release.sh
 
       - name: Release (only when Git tag pushed)
         uses: softprops/action-gh-release@v1
