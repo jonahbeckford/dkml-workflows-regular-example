@@ -14,6 +14,7 @@ depends: [
   "ocaml"
   "dune" {>= "2.9"}
   "diskuvbox"
+  "dkml-workflows" {>= "1.0.0" & build}
   "odoc" {with-doc}
 ]
 build: [
@@ -33,3 +34,9 @@ build: [
   ["dune" "install" "-p" name "--create-install-files" name]
 ]
 dev-repo: "git+https://github.com/username/reponame.git"
+pin-depends: [
+  [
+    "dkml-workflows.1.0.0"
+    "git+https://github.com/diskuv/dkml-workflows-prerelease.git#v1"
+  ]
+]

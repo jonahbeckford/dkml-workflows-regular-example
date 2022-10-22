@@ -20,7 +20,14 @@
  (synopsis "An example for you")
  (description
   "An example of using dkml-workflows to build on multiple platform, including Windows with Visual Studio and Linux with an old C library.")
- (depends ocaml dune diskuvbox)
+ (depends
+  ocaml
+  dune
+  diskuvbox
+  (dkml-workflows
+   (and
+    (>= 1.0.0)
+    :build)))
  (tags
   (topics "to describe" your project)))
 
