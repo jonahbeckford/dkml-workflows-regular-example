@@ -5,6 +5,9 @@ variables:
   THE_OPAM_PACKAGE: your_example.opam
   THE_EXECUTABLE_NAME: your_example
 
+  # Overrides of the included setup-dkml.gitlab-ci.yml
+  DKML_COMPILER: "" # You can override the dkml-compiler package version. Example: 4.12.1-v1.0.2
+
 build_linux:
   script:
     - ci/build-test.sh --opam-package "$THE_OPAM_PACKAGE" --executable-name "$THE_EXECUTABLE_NAME"
@@ -16,16 +19,11 @@ build_linux:
 
 build_win32:
   script:
-    - dir
     - msys64\usr\bin\bash -lc "ci/build-test.sh --opam-package ${env:THE_OPAM_PACKAGE} --executable-name ${env:THE_EXECUTABLE_NAME}"
 
 release:
   stage: deploy
   image: alpine
-  # needs:
-  #   - build_linux
-  #   #- build_macos # currently disabled
-  #   - build_win32
   script:
     - apk install jq rsync curl
 

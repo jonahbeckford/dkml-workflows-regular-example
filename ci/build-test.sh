@@ -78,6 +78,12 @@ install -d dist/
 ls -l "${opam_root}/dkml/bin"
 install -v "${opam_root}/dkml/bin/${EXECUTABLE_NAME}${suffix_ext}" "dist/${abi_pattern}-${EXECUTABLE_NAME}${suffix_ext}"
 
+# Diagnostics
+case "${dkml_host_abi}" in
+linux_*) apk add file ;;
+esac
+file "dist/${abi_pattern}-${EXECUTABLE_NAME}${suffix_ext}"
+
 # For Windows you must ask your users to first install the vc_redist executable.
 # Confer: https://github.com/diskuv/dkml-workflows#distributing-your-windows-executables
 case "${dkml_host_abi}" in
