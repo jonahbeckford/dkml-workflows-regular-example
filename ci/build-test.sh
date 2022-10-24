@@ -53,10 +53,28 @@ suffix_ext=$suffix_ext
 # PATH. Add opamrun
 if [ -n "${CI_PROJECT_DIR:-}" ]; then
     export PATH="$CI_PROJECT_DIR/.ci/sd4/opamrun:$PATH"
+elif [ -n "${PC_PROJECT_DIR:-}" ]; then
+    export PATH="$PC_PROJECT_DIR/.ci/sd4/opamrun:$PATH"
 elif [ -n "${GITHUB_WORKSPACE:-}" ]; then
     export PATH="$GITHUB_WORKSPACE/.ci/sd4/opamrun:$PATH"
 else
     export PATH="$PWD/.ci/sd4/opamrun:$PATH"
+fi
+
+# Initial Diagnostics
+opamrun switch
+opamrun list
+opamrun var
+opamrun config report
+opamrun exec -- ocamlc -config
+xswitch=$(opamrun var switch)
+if [ -x /usr/bin/cypgath ]; then
+    xswitch=$(/usr/bin/cygpath -au "$xswitch")
+fi
+if [ -e "$xswitch/src-ocaml/config.log" ]; then
+    echo '--- BEGIN src-ocaml/config.log ---' >&2
+    cat $xswitch/src-ocaml/config.log >&2
+    echo '--- END src-ocaml/config.log ---' >&2
 fi
 
 # Build and test
@@ -78,9 +96,12 @@ install -d dist/
 ls -l "${opam_root}/dkml/bin"
 install -v "${opam_root}/dkml/bin/${EXECUTABLE_NAME}${suffix_ext}" "dist/${abi_pattern}-${EXECUTABLE_NAME}${suffix_ext}"
 
-# Diagnostics
+# Final Diagnostics
 case "${dkml_host_abi}" in
-linux_*) apk add file ;;
+linux_*)
+    if command -v apk; then
+        apk add file
+    fi ;;
 esac
 file "dist/${abi_pattern}-${EXECUTABLE_NAME}${suffix_ext}"
 

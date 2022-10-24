@@ -39,13 +39,13 @@ variables:
 
   # Only 4 caches allowed in GitLab CI
   cache:
-    - key: "${CACHE_PREFIX}-1-52f582-${FDOPEN_OPAMEXE_BOOTSTRAP}-${dkml_host_abi}-${opam_abi}-${bootstrap_opam_version}"
+    - key: "${CACHE_PREFIX}-1-507384-${FDOPEN_OPAMEXE_BOOTSTRAP}-${dkml_host_abi}-${opam_abi}-${bootstrap_opam_version}"
       paths:
         - .ci/sd4/bs
     - key: "${CACHE_PREFIX}-1-${abi_pattern}-${vsstudio_arch}-${vsstudio_hostarch}-${vsstudio_dir}-${vsstudio_vcvarsver}-${vsstudio_winsdkver}-${vsstudio_msvspreference}-${vsstudio_cmakegenerator}"
       paths:
         - .ci/sd4/vsenv.sh
-    - key: "${CACHE_PREFIX}-${DKML_VERSION}-${abi_pattern}-1-52f582-${FDOPEN_OPAMEXE_BOOTSTRAP}-${dkml_host_abi}-${opam_abi}-${bootstrap_opam_version}-1-${OCAML_COMPILER}-${DISKUV_OPAM_REPOSITORY}-${DKML_COMPILER}-${CONF_DKML_CROSS_TOOLCHAIN}"
+    - key: "${CACHE_PREFIX}-${DKML_VERSION}-${abi_pattern}-1-507384-${FDOPEN_OPAMEXE_BOOTSTRAP}-${dkml_host_abi}-${opam_abi}-${bootstrap_opam_version}-1-${OCAML_COMPILER}-${DISKUV_OPAM_REPOSITORY}-${DKML_COMPILER}-${CONF_DKML_CROSS_TOOLCHAIN}"
       paths:
         - ${opam_root}/config
         - ${opam_root}/dkml
@@ -72,7 +72,7 @@ build_win32:
         bootstrap_opam_version: '2.2.0-dkml20220801T155940Z',
         opam_abi: 'windows_x86',
         dkml_host_abi: 'windows_x86',
-        opam_root: '${CI_PROJECT_DIR}/.opam',
+        opam_root: '${CI_PROJECT_DIR}/.ci/o',
         vsstudio_hostarch: 'x64',
         vsstudio_arch: 'x86',
         ocaml_options: 'ocaml-option-32bit' },
@@ -85,7 +85,7 @@ build_win32:
         bootstrap_opam_version: '2.2.0-dkml20220801T155940Z',
         opam_abi: 'windows_x86_64',
         dkml_host_abi: 'windows_x86_64',
-        opam_root: '${CI_PROJECT_DIR}/.opam',
+        opam_root: '${CI_PROJECT_DIR}/.ci/o',
         vsstudio_hostarch: 'x64',
         vsstudio_arch: 'x64' },
         
@@ -93,7 +93,7 @@ build_win32:
   variables:
     # https://patchwork.kernel.org/project/qemu-devel/patch/20211215073402.144286-17-thuth@redhat.com/
     CHERE_INVOKING: "yes" # Preserve the current working directory
-    MSYSTEM: "CLANG64" # Start a 64 bit CLANG64 environment
+    MSYSTEM: '${msys2_system}' # Start a 64 bit environment if CLANG64, etc.
   image: $gl_image
   tags: [shared-windows, windows, windows-1809]
   extends: .build
@@ -145,6 +145,8 @@ build_win32:
 
     # POSIX and AWK scripts
 
+    - If ( !(Test-Path -Path .ci\sd4 ) ) { New-Item .ci\sd4 -ItemType Directory | Out-Null }
+
     - |
       $Content = @'
       #!/bin/sh
@@ -198,8 +200,8 @@ build_win32:
       }
       
       '@
-      Set-Content -Path "common-values.sh" -Encoding Unicode -Value $Content
-    - msys64\usr\bin\bash -lc 'dos2unix common-values.sh'
+      Set-Content -Path ".ci\sd4\common-values.sh" -Encoding Unicode -Value $Content
+    - msys64\usr\bin\bash -lc 'dos2unix .ci/sd4/common-values.sh'
 
     - |
       $Content = @'
@@ -228,7 +230,7 @@ build_win32:
       # ------------------------ Functions ------------------------
       
       # shellcheck source=./common-values.sh
-      . ./common-values.sh
+      . .ci/sd4/common-values.sh
       
       # Disable automatic garbage collection
       git_disable_gc() {
@@ -253,7 +255,7 @@ build_win32:
               git -C ".ci/sd4/g/$git_checkout_NAME" fetch --no-tags --progress --no-recurse-submodules --depth=1 origin "+${git_checkout_REF}:refs/tags/v0.0"
           else
               install -d ".ci/sd4/g/$git_checkout_NAME"
-              git -C ".ci/sd4/g/$git_checkout_NAME" init
+              git -C ".ci/sd4/g/$git_checkout_NAME" -c init.defaultBranch=main init
               git_disable_gc "$git_checkout_NAME"
               git -C ".ci/sd4/g/$git_checkout_NAME" remote add origin "$git_checkout_URL"
               git -C ".ci/sd4/g/$git_checkout_NAME" fetch --no-tags --prune --progress --no-recurse-submodules --depth=1 origin "+${git_checkout_REF}:refs/tags/v0.0"
@@ -305,8 +307,8 @@ build_win32:
       esac
       
       '@
-      Set-Content -Path "run-checkout-code.sh" -Encoding Unicode -Value $Content
-    - msys64\usr\bin\bash -lc 'dos2unix run-checkout-code.sh'
+      Set-Content -Path ".ci\sd4\run-checkout-code.sh" -Encoding Unicode -Value $Content
+    - msys64\usr\bin\bash -lc 'dos2unix .ci/sd4/run-checkout-code.sh'
 
     - |
       $Content = @'
@@ -332,7 +334,7 @@ build_win32:
       # ------------------------ Functions ------------------------
       
       # shellcheck source=./common-values.sh
-      . ./common-values.sh
+      . .ci/sd4/common-values.sh
       
       if [ "${VERBOSE:-}" = "true" ]; then
           do_tar_rf() {
@@ -815,12 +817,13 @@ build_win32:
       # Add MSVC compiler environment if available
       if [ -e "\$${setup_WORKSPACE_VARNAME}/.ci/sd4/msvcenv" ]; then
           _oldpath="\$PATH"
+          # shellcheck disable=SC1091
           . "\$${setup_WORKSPACE_VARNAME}/.ci/sd4/msvcenv"
           PATH="\$PATH:\$_oldpath"
       
           # MSVC (link.exe) needs a TMP as well.
           # Confer: https://docs.microsoft.com/en-us/cpp/build/reference/linking?view=msvc-170#link-environment-variables
-          if [ -z "${TMP:-}" ]; then
+          if [ -z "\${TMP:-}" ]; then
               # GitHub Actions as of 2022-10 does not set TMP. GitLab CI/CD does.
               TMP="\$RUNNER_TEMP"
           fi
@@ -831,7 +834,7 @@ build_win32:
       fi
       
       # Windows
-      if [ -n "${COMSPEC:-}" ]; then
+      if [ -n "\${COMSPEC:-}" ]; then
           # We must place MSYS2 in front of path so that MSYS2
           # tar.exe is used instead of Windows tar.exe.
           PATH="/usr/bin:\$PATH"
@@ -1117,11 +1120,18 @@ build_win32:
       }
       do_install_compiler
       
+      do_summary() {
+          section_begin summary "Summary"
+          opamrun var
+          opamrun exec -- ocamlc -config
+          section_end summary
+      }
+      do_summary
+      
       '@
-      Set-Content -Path "run-setup-dkml.sh" -Encoding Unicode -Value $Content
-    - msys64\usr\bin\bash -lc 'dos2unix run-setup-dkml.sh'
+      Set-Content -Path ".ci\sd4\run-setup-dkml.sh" -Encoding Unicode -Value $Content
+    - msys64\usr\bin\bash -lc 'dos2unix .ci/sd4/run-setup-dkml.sh'
 
-    - If ( !(Test-Path -Path.ci\sd4 ) ) { New-Item .ci\sd4 -ItemType Directory | Out-Null }
     - |
       $Content = @'
       # MSVC environment variables:
@@ -1173,7 +1183,7 @@ build_win32:
       
       # Make export expression [SN]NAME=[SV]VALUE[EV]
       # where [SN] is start name and [SV] and [EV] are start and end value
-      if ("${env:GITLAB_CI}" -eq "true") {
+      if (("${env:GITLAB_CI}" -eq "true") -or ("${env:PC_CI}" -eq "true")) {
           # Executed immediately in POSIX shell, so must be a real POSIX shell variable declaration
           $ExportSN = "export "
           $ExportSV = "'"
@@ -1188,7 +1198,7 @@ build_win32:
       }
       
       # Locate Visual Studio (Windows)
-      if ("${env:vsstudio_dir}" -eq "" -and (!(Test-Path -Path .ci/sd4/vsenv))) {
+      if ("${env:vsstudio_dir}" -eq "" -and (!(Test-Path -Path .ci/sd4/vsenv${ExportExt}))) {
           $env:PSModulePath += "$([System.IO.Path]::PathSeparator).ci\sd4\g\dkml-runtime-distribution\src\windows"
           Import-Module Machine
       
@@ -1215,11 +1225,11 @@ build_win32:
       }
       
       '@
-      Set-Content -Path "config-vsstudio.ps1" -Encoding Unicode -Value $Content
+      Set-Content -Path ".ci\sd4\config-vsstudio.ps1" -Encoding Unicode -Value $Content
 
     - |
       $Content = @'
-      REM @ECHO OFF
+      @ECHO OFF
       
       REM The OCaml dkml-base-compiler will compile fine but any other
       REM packages (ocamlbuild, etc.) which
@@ -1246,9 +1256,9 @@ build_win32:
       REM   because it stomps over the PATH. So we are inside a Batch script to do the query.
       msys64\usr\bin\bash -lc "set | grep -v '^PATH=' | awk -f .ci/sd4/msvcenv.awk > .ci/sd4/msvcenv"
       '@
-      Set-Content -Path "get-msvcpath-into-msys2.cmd" -Encoding Default -Value $Content
+      Set-Content -Path ".ci\sd4\get-msvcpath-into-msys2.cmd" -Encoding Default -Value $Content
 
-    - msys64\usr\bin\bash -lc "sh run-checkout-code.sh CI_PROJECT_DIR '${env:CI_PROJECT_DIR}'"
+    - msys64\usr\bin\bash -lc "sh .ci/sd4/run-checkout-code.sh CI_PROJECT_DIR '${env:CI_PROJECT_DIR}'"
 
       # Diagnose Visual Studio environment variables (Windows)
       # This wastes time and has lots of rows! Only run if "VERBOSE" GitHub input key.
@@ -1267,16 +1277,16 @@ build_win32:
           $allinstances = Get-VSSetupInstance
           $allinstances | ConvertTo-Json -Depth 5
       }
-    - .\config-vsstudio.ps1
+    - .ci\sd4\config-vsstudio.ps1
     - msys64\usr\bin\bash -lc "dos2unix .ci/sd4/vsenv.sh"
     - Get-Content .ci/sd4/vsenv.sh
 
       # Capture Visual Studio compiler environment
-    - msys64\usr\bin\bash -lc ". .ci/sd4/vsenv.sh && cmd /c get-msvcpath-into-msys2.cmd"
+    - msys64\usr\bin\bash -lc ". .ci/sd4/vsenv.sh && cmd /c '.ci\sd4\get-msvcpath-into-msys2.cmd'"
     - msys64\usr\bin\bash -lc "cat .ci/sd4/msvcpath | tr -d '\r' | cygpath --path -f - | awk -f .ci/sd4/msvcpath.awk >> .ci/sd4/msvcenv"    
     - msys64\usr\bin\bash -lc "tail -n100 .ci/sd4/msvcpath .ci/sd4/msvcenv"
 
-    - msys64\usr\bin\bash -lc "sh run-setup-dkml.sh CI_PROJECT_DIR '${env:CI_PROJECT_DIR}'"
+    - msys64\usr\bin\bash -lc "sh .ci/sd4/run-setup-dkml.sh CI_PROJECT_DIR '${env:CI_PROJECT_DIR}'"
   script:
     - 'Write-Host "Override the .gitlab-ci.yml configuration ...`n  build_win32:`n    script:`nto configure your Windows build."'
 
@@ -1292,7 +1302,9 @@ build_macos:
   before_script:
     - echo "Writing scripts ..."
     - |
-      cat > common-values.sh <<'end_of_script'
+      install -d .ci/sd4
+
+      cat > .ci/sd4/common-values.sh <<'end_of_script'
       #!/bin/sh
       
       # ------------------------ Log Formatting ------------------------
@@ -1345,7 +1357,7 @@ build_macos:
       
       end_of_script
 
-      cat > run-checkout-code.sh <<'end_of_script'
+      cat > .ci/sd4/run-checkout-code.sh <<'end_of_script'
       #!/bin/sh
       
       # ================
@@ -1371,7 +1383,7 @@ build_macos:
       # ------------------------ Functions ------------------------
       
       # shellcheck source=./common-values.sh
-      . ./common-values.sh
+      . .ci/sd4/common-values.sh
       
       # Disable automatic garbage collection
       git_disable_gc() {
@@ -1396,7 +1408,7 @@ build_macos:
               git -C ".ci/sd4/g/$git_checkout_NAME" fetch --no-tags --progress --no-recurse-submodules --depth=1 origin "+${git_checkout_REF}:refs/tags/v0.0"
           else
               install -d ".ci/sd4/g/$git_checkout_NAME"
-              git -C ".ci/sd4/g/$git_checkout_NAME" init
+              git -C ".ci/sd4/g/$git_checkout_NAME" -c init.defaultBranch=main init
               git_disable_gc "$git_checkout_NAME"
               git -C ".ci/sd4/g/$git_checkout_NAME" remote add origin "$git_checkout_URL"
               git -C ".ci/sd4/g/$git_checkout_NAME" fetch --no-tags --prune --progress --no-recurse-submodules --depth=1 origin "+${git_checkout_REF}:refs/tags/v0.0"
@@ -1449,7 +1461,7 @@ build_macos:
       
       end_of_script
 
-      cat > run-setup-dkml.sh <<'end_of_script'
+      cat > .ci/sd4/run-setup-dkml.sh <<'end_of_script'
       #!/bin/sh
       set -euf
       
@@ -1472,7 +1484,7 @@ build_macos:
       # ------------------------ Functions ------------------------
       
       # shellcheck source=./common-values.sh
-      . ./common-values.sh
+      . .ci/sd4/common-values.sh
       
       if [ "${VERBOSE:-}" = "true" ]; then
           do_tar_rf() {
@@ -1955,12 +1967,13 @@ build_macos:
       # Add MSVC compiler environment if available
       if [ -e "\$${setup_WORKSPACE_VARNAME}/.ci/sd4/msvcenv" ]; then
           _oldpath="\$PATH"
+          # shellcheck disable=SC1091
           . "\$${setup_WORKSPACE_VARNAME}/.ci/sd4/msvcenv"
           PATH="\$PATH:\$_oldpath"
       
           # MSVC (link.exe) needs a TMP as well.
           # Confer: https://docs.microsoft.com/en-us/cpp/build/reference/linking?view=msvc-170#link-environment-variables
-          if [ -z "${TMP:-}" ]; then
+          if [ -z "\${TMP:-}" ]; then
               # GitHub Actions as of 2022-10 does not set TMP. GitLab CI/CD does.
               TMP="\$RUNNER_TEMP"
           fi
@@ -1971,7 +1984,7 @@ build_macos:
       fi
       
       # Windows
-      if [ -n "${COMSPEC:-}" ]; then
+      if [ -n "\${COMSPEC:-}" ]; then
           # We must place MSYS2 in front of path so that MSYS2
           # tar.exe is used instead of Windows tar.exe.
           PATH="/usr/bin:\$PATH"
@@ -2257,10 +2270,18 @@ build_macos:
       }
       do_install_compiler
       
+      do_summary() {
+          section_begin summary "Summary"
+          opamrun var
+          opamrun exec -- ocamlc -config
+          section_end summary
+      }
+      do_summary
+      
       end_of_script
 
-    - 'sh run-checkout-code.sh CI_PROJECT_DIR "${CI_PROJECT_DIR}"'
-    - 'sh run-setup-dkml.sh CI_PROJECT_DIR "${CI_PROJECT_DIR}"'
+    - 'sh .ci/sd4/run-checkout-code.sh CI_PROJECT_DIR "${CI_PROJECT_DIR}"'
+    - 'sh .ci/sd4/run-setup-dkml.sh CI_PROJECT_DIR "${CI_PROJECT_DIR}"'
   script:
     - 'printf "Override the .gitlab-ci.yml configuration ...\n  build_macos:\n    script:\nto configure your macOS build.\n"'
 
@@ -2273,7 +2294,7 @@ build_linux:
         comment: '(CentOS 7, etc.)' ,
         bootstrap_opam_version: '2.2.0-dkml20220801T155940Z' ,
         dkml_host_abi: 'linux_x86' ,
-        opam_root: '.ci/opamroot' ,
+        opam_root: '.ci/o' ,
         in_docker: 'true' ,
         dockcross_image: 'dockcross/manylinux2014-x86' ,
         dockcross_run_extra_args: '--platform linux/386' },
@@ -2282,7 +2303,7 @@ build_linux:
         comment: '(CentOS 7, etc.)' ,
         bootstrap_opam_version: '2.2.0-dkml20220801T155940Z' ,
         dkml_host_abi: 'linux_x86_64' ,
-        opam_root: '.ci/opamroot' ,
+        opam_root: '.ci/o' ,
         dockcross_image: 'dockcross/manylinux2014-x64' ,
         in_docker: 'true' },
         
@@ -2322,7 +2343,9 @@ build_linux:
     - apk add tar bash git
     - echo "Writing scripts ..."
     - |
-      cat > common-values.sh <<'end_of_script'
+      install -d .ci/sd4
+
+      cat > .ci/sd4/common-values.sh <<'end_of_script'
       #!/bin/sh
       
       # ------------------------ Log Formatting ------------------------
@@ -2375,7 +2398,7 @@ build_linux:
       
       end_of_script
 
-      cat > run-checkout-code.sh <<'end_of_script'
+      cat > .ci/sd4/run-checkout-code.sh <<'end_of_script'
       #!/bin/sh
       
       # ================
@@ -2401,7 +2424,7 @@ build_linux:
       # ------------------------ Functions ------------------------
       
       # shellcheck source=./common-values.sh
-      . ./common-values.sh
+      . .ci/sd4/common-values.sh
       
       # Disable automatic garbage collection
       git_disable_gc() {
@@ -2426,7 +2449,7 @@ build_linux:
               git -C ".ci/sd4/g/$git_checkout_NAME" fetch --no-tags --progress --no-recurse-submodules --depth=1 origin "+${git_checkout_REF}:refs/tags/v0.0"
           else
               install -d ".ci/sd4/g/$git_checkout_NAME"
-              git -C ".ci/sd4/g/$git_checkout_NAME" init
+              git -C ".ci/sd4/g/$git_checkout_NAME" -c init.defaultBranch=main init
               git_disable_gc "$git_checkout_NAME"
               git -C ".ci/sd4/g/$git_checkout_NAME" remote add origin "$git_checkout_URL"
               git -C ".ci/sd4/g/$git_checkout_NAME" fetch --no-tags --prune --progress --no-recurse-submodules --depth=1 origin "+${git_checkout_REF}:refs/tags/v0.0"
@@ -2479,7 +2502,7 @@ build_linux:
       
       end_of_script
 
-      cat > run-setup-dkml.sh <<'end_of_script'
+      cat > .ci/sd4/run-setup-dkml.sh <<'end_of_script'
       #!/bin/sh
       set -euf
       
@@ -2502,7 +2525,7 @@ build_linux:
       # ------------------------ Functions ------------------------
       
       # shellcheck source=./common-values.sh
-      . ./common-values.sh
+      . .ci/sd4/common-values.sh
       
       if [ "${VERBOSE:-}" = "true" ]; then
           do_tar_rf() {
@@ -2985,12 +3008,13 @@ build_linux:
       # Add MSVC compiler environment if available
       if [ -e "\$${setup_WORKSPACE_VARNAME}/.ci/sd4/msvcenv" ]; then
           _oldpath="\$PATH"
+          # shellcheck disable=SC1091
           . "\$${setup_WORKSPACE_VARNAME}/.ci/sd4/msvcenv"
           PATH="\$PATH:\$_oldpath"
       
           # MSVC (link.exe) needs a TMP as well.
           # Confer: https://docs.microsoft.com/en-us/cpp/build/reference/linking?view=msvc-170#link-environment-variables
-          if [ -z "${TMP:-}" ]; then
+          if [ -z "\${TMP:-}" ]; then
               # GitHub Actions as of 2022-10 does not set TMP. GitLab CI/CD does.
               TMP="\$RUNNER_TEMP"
           fi
@@ -3001,7 +3025,7 @@ build_linux:
       fi
       
       # Windows
-      if [ -n "${COMSPEC:-}" ]; then
+      if [ -n "\${COMSPEC:-}" ]; then
           # We must place MSYS2 in front of path so that MSYS2
           # tar.exe is used instead of Windows tar.exe.
           PATH="/usr/bin:\$PATH"
@@ -3287,9 +3311,17 @@ build_linux:
       }
       do_install_compiler
       
+      do_summary() {
+          section_begin summary "Summary"
+          opamrun var
+          opamrun exec -- ocamlc -config
+          section_end summary
+      }
+      do_summary
+      
       end_of_script
 
-    - 'sh run-checkout-code.sh CI_PROJECT_DIR "${CI_PROJECT_DIR}"'
-    - 'sh run-setup-dkml.sh CI_PROJECT_DIR "${CI_PROJECT_DIR}"'
+    - 'sh .ci/sd4/run-checkout-code.sh CI_PROJECT_DIR "${CI_PROJECT_DIR}"'
+    - 'sh .ci/sd4/run-setup-dkml.sh CI_PROJECT_DIR "${CI_PROJECT_DIR}"'
   script:
     - 'printf "Override the .gitlab-ci.yml configuration ...\n  build_linux:\n    script:\nto configure your Linux build.\n"'

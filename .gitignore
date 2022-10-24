@@ -17,3 +17,8 @@ _build/
 
 #   direnv (https://direnv.net/)
 .envrc
+
+# PC setup-dkml target
+/msys64/
+/.ci/
+/.opam/
