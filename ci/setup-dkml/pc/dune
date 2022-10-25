@@ -4,7 +4,7 @@
   (setenv
    OCAMLRUNPARAM
    b
-   (run %{bin:pc-setup-dkml} --output-windows_x86 %{target}))))
+   (run %{bin:pc-setup-dkml.exe} --output-windows_x86 %{target}))))
 
 (rule
  (target setup-dkml-windows_x86_64-gen.ps1)
@@ -12,7 +12,7 @@
   (setenv
    OCAMLRUNPARAM
    b
-   (run %{bin:pc-setup-dkml} --output-windows_x86_64 %{target}))))
+   (run %{bin:pc-setup-dkml.exe} --output-windows_x86_64 %{target}))))
 
 (rule
  (alias gen-dkml)

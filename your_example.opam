@@ -37,6 +37,6 @@ dev-repo: "git+https://github.com/username/reponame.git"
 pin-depends: [
   [
     "dkml-workflows.1.0.0"
-    "git+https://github.com/diskuv/dkml-workflows-prerelease.git#v1"
+    "git+https://github.com/diskuv/dkml-workflows.git#v1"
   ]
 ]
