@@ -44,7 +44,7 @@ You can see an example workflow at https://github.com/diskuv/dkml-workflows-regu
 For news about Diskuv OCaml,
 [![Twitter URL](https://img.shields.io/twitter/url/https/twitter.com/diskuv.svg?style=social&label=Follow%20%40diskuv)](https://twitter.com/diskuv) on Twitter.
 
-## Updating GitHub Actions and GitLab CI/CD
+## Updating the DKML scripts
 
 ```bash
 opam install . --deps-only

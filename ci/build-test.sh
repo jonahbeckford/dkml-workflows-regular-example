@@ -73,7 +73,7 @@ if [ -x /usr/bin/cypgath ]; then
 fi
 if [ -e "$xswitch/src-ocaml/config.log" ]; then
     echo '--- BEGIN src-ocaml/config.log ---' >&2
-    cat $xswitch/src-ocaml/config.log >&2
+    cat "$xswitch/src-ocaml/config.log" >&2
     echo '--- END src-ocaml/config.log ---' >&2
 fi
 
