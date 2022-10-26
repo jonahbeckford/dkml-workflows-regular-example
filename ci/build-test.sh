@@ -86,9 +86,11 @@ fi
 #     we use `--no-depexts`. The dockcross manylinux2014 has package names
 #     "pkgconfig.i686" and "pkgconfig.x86_64"; sadly that does not seem to match what
 #     opam 2.1.0 is looking for (ie. "pkgconfig").
+OPAM_PKGNAME=${OPAM_PACKAGE%.opam}
+opamrun exec -- env
 case "${dkml_host_abi}" in
-linux_*) opamrun install "./${OPAM_PACKAGE}" --with-test --yes --no-depexts ;;
-*) opamrun install "./${OPAM_PACKAGE}" --with-test --yes ;;
+linux_*) opamrun install "./${OPAM_PKGNAME}.opam" --with-test --yes --no-depexts ;;
+*) opamrun install "./${OPAM_PKGNAME}.opam" --with-test --yes ;;
 esac
 
 # Copy the installed binary from 'dkml' Opam switch into dist/ folder
