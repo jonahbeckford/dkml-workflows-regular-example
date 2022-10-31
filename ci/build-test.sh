@@ -77,6 +77,9 @@ if [ -e "$xswitch/src-ocaml/config.log" ]; then
     echo '--- END src-ocaml/config.log ---' >&2
 fi
 
+# Update
+opamrun update
+
 # Build and test
 #
 #     Because conf-pkg-config errors on manylinux2014 (CentOS 7):
