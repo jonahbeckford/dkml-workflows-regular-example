@@ -16,13 +16,6 @@ shift
 EXECUTABLE_NAME=$1
 shift
 
-# If (executable (public_name EXECUTABLE_NAME) ...) already has .exe then executable will
-# have .exe. Otherwise it depends on exe_ext.
-case "$EXECUTABLE_NAME" in
-*.exe) suffix_ext="" ;;
-*) suffix_ext="${exe_ext:-}" ;;
-esac
-
 # shellcheck disable=SC2154
 echo "
 =============
@@ -97,9 +90,28 @@ linux_*) opamrun install "./${OPAM_PKGNAME}.opam" --with-test --yes --no-depexts
 esac
 
 # Copy the installed binary from 'dkml' Opam switch into dist/ folder
-install -d dist/
+#
+# dist/
+#   <abi_pattern>/
+#      <file1>
+#      ...
 ls -l "${opam_root}/dkml/bin"
-install -v "${opam_root}/dkml/bin/${EXECUTABLE_NAME}${suffix_ext}" "dist/${abi_pattern}-${EXECUTABLE_NAME}${suffix_ext}"
+#   If (executable (public_name EXECUTABLE_NAME) ...) already has .exe then executable will
+#   have .exe. Otherwise it depends on exe_ext.
+case "$EXECUTABLE_NAME" in
+*.exe) suffix_ext="" ;;
+*) suffix_ext="${exe_ext:-}" ;;
+esac
+#   Copy executable
+install -d "dist/${abi_pattern}"
+install -v "${opam_root}/dkml/bin/${EXECUTABLE_NAME}${suffix_ext}" "dist/${abi_pattern}/${EXECUTABLE_NAME}${suffix_ext}"
+#   For Windows you must ask your users to first install the vc_redist executable.
+#   Confer: https://github.com/diskuv/dkml-workflows#distributing-your-windows-executables
+case "${dkml_host_abi}" in
+windows_x86_64) wget -O "dist/${abi_pattern}/vc_redist.x64.exe" https://aka.ms/vs/17/release/vc_redist.x64.exe ;;
+windows_x86) wget -O "dist/${abi_pattern}/vc_redist.x86.exe" https://aka.ms/vs/17/release/vc_redist.x86.exe ;;
+windows_arm64) wget -O "dist/${abi_pattern}/vc_redist.arm64.exe" https://aka.ms/vs/17/release/vc_redist.arm64.exe ;;
+esac
 
 # Final Diagnostics
 case "${dkml_host_abi}" in
@@ -108,12 +120,4 @@ linux_*)
         apk add file
     fi ;;
 esac
-file "dist/${abi_pattern}-${EXECUTABLE_NAME}${suffix_ext}"
-
-# For Windows you must ask your users to first install the vc_redist executable.
-# Confer: https://github.com/diskuv/dkml-workflows#distributing-your-windows-executables
-case "${dkml_host_abi}" in
-windows_x86_64) wget -O dist/vc_redist.x64.exe https://aka.ms/vs/17/release/vc_redist.x64.exe ;;
-windows_x86) wget -O dist/vc_redist.x86.exe https://aka.ms/vs/17/release/vc_redist.x86.exe ;;
-windows_arm64) wget -O dist/vc_redist.arm64.exe https://aka.ms/vs/17/release/vc_redist.arm64.exe ;;
-esac
+file "dist/${abi_pattern}/${EXECUTABLE_NAME}${suffix_ext}"
