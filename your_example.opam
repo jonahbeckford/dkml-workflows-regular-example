@@ -31,12 +31,6 @@ build: [
     "@runtest" {with-test}
     "@doc" {with-doc}
   ]
-  ["dune" "install" "-p" name "--verbose" "--create-install-files" name]
+  ["dune" "install" "-p" name "--create-install-files" name]
 ]
 dev-repo: "git+https://github.com/username/reponame.git"
-pin-depends: [
-  [
-    "dkml-workflows.1.1.0"
-    "git+https://github.com/diskuv/dkml-workflows.git#v1"
-  ]
-]

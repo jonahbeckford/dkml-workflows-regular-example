@@ -24,10 +24,7 @@
   ocaml
   dune
   diskuvbox
-  (dkml-workflows
-   (and
-    (>= 1.1.0)
-    :build)))
+  (dkml-workflows (and (>= 1.1.0) :build)))
  (tags
   (topics "to describe" your project)))
 
