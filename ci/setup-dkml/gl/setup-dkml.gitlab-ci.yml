@@ -43,7 +43,7 @@ variables:
 
   # Only 4 caches allowed in GitLab CI
   cache:
-    - key: "1_${CACHE_PREFIX}-bf92f53-${abi_pattern}-${CI_COMMIT_REF_SLUG}"
+    - key: "1_${CACHE_PREFIX}-1_1_0-${abi_pattern}-${CI_COMMIT_REF_SLUG}"
       paths:
         - .ci/sd4/bs
         - ${opam_root_cacheable}/config
